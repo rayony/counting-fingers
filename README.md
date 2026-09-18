@@ -6,6 +6,8 @@ Phone-first web app that watches the **front camera**, counts **exactly 1 or 2 r
 
 Open that URL on a phone. Tap the black viewport to allow the selfie camera.
 
+If the demo 404s, this is a one-time GitHub setting: repo **Settings → Pages → Source: GitHub Actions**, then re-run the **GitHub Pages** workflow.
+
 ## What it does
 
 1. Asks for the front camera (the dark viewport is the permission control).

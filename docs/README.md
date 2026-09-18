@@ -10,10 +10,11 @@ It is a self-contained front-camera demo (MediaPipe from a CDN). The React / Tan
 
 Push to `main`. [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) uploads this `docs/` folder to GitHub Pages.
 
-First-time setup (already done if the workflow is enabled):
+**First time:** GitHub blocks creating a Pages site until you pick a source. Open
 
-1. Repo **Settings → Pages → GitHub Actions** as the source, or
-2. The workflow’s `actions/deploy-pages` step creates the Pages site.
+[Settings → Pages](https://github.com/rayony/counting-fingers/settings/pages)
+
+and set **Source** to **GitHub Actions**. Re-run the workflow (Actions → GitHub Pages → Run workflow), or push another commit.
 
 ## Camera
 
