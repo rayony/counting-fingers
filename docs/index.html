@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a5f73" />
+    <title>Finger Confirm</title>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f6f3ee;
+        --elev: #fffdf9;
+        --fg: #161616;
+        --muted: #5c5a56;
+        --subtle: #8a8680;
+        --teal: #1a5f73;
+        --warm: #e07020;
+        --confirm: #c4312b;
+        --false: #c39200;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 64rem;
+        margin: 0 auto;
+        padding: max(1rem, env(safe-area-inset-top)) 1rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      @media (min-width: 768px) {
+        main { flex-direction: row; align-items: stretch; gap: 2rem; padding: 2rem; }
+      }
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        background: var(--fg);
+        box-shadow: 0 0 0 1px rgba(22, 22, 22, 0.06), 0 10px 28px -18px rgba(22, 22, 22, 0.28);
+      }
+      @media (min-width: 768px) {
+        .stage { aspect-ratio: auto; min-height: 32rem; flex: 1; }
+      }
+      video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+      }
+      .perm {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        color: #fff;
+        font: inherit;
+      }
+      .perm[hidden] { display: none; }
+      .cta {
+        display: inline-flex;
+        min-height: 2.75rem;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        background: var(--teal);
+        color: #fff;
+        font-weight: 500;
+      }
+      .hint-on-dark {
+        margin-top: 0.75rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.72);
+      }
+      .badge {
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--warm);
+        color: #fff;
+        font-size: 1.125rem;
+        font-weight: 600;
+        z-index: 3;
+      }
+      .badge.show { display: flex; }
+      .chip {
+        position: absolute;
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        border-radius: 0.5rem;
+        background: rgba(255, 253, 249, 0.95);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        z-index: 3;
+        display: none;
+      }
+      .chip.show { display: block; }
+      .side {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding-bottom: env(safe-area-inset-bottom);
+        min-width: 0;
+      }
+      header { display: flex; gap: 0.75rem; align-items: flex-start; }
+      .dot {
+        flex: 0 0 2.75rem;
+        width: 2.75rem;
+        height: 2.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: var(--warm);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.125rem;
+      }
+      h1 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+      .sub { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--muted); }
+      .log {
+        flex: 1;
+        min-height: 10rem;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        background: var(--elev);
+        padding: 1rem;
+        box-shadow: 0 0 0 1px rgba(22, 22, 22, 0.06);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 0.875rem;
+      }
+      .empty { margin: 0; color: var(--subtle); font-family: "IBM Plex Sans", system-ui, sans-serif; }
+      ol { margin: 0; padding: 0; list-style: none; }
+      li { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; }
+      time { flex: 0 0 auto; color: var(--subtle); font-variant-numeric: tabular-nums; }
+      .t-pending { color: var(--muted); }
+      .t-confirm { color: var(--confirm); }
+      .t-false { color: var(--false); }
+      label { font-size: 0.75rem; color: var(--subtle); display: block; }
+      input[type="password"] {
+        width: 100%;
+        margin-top: 0.35rem;
+        min-height: 2.75rem;
+        border: 1px solid #e4dfd6;
+        border-radius: 0.5rem;
+        padding: 0 0.75rem;
+        font: inherit;
+        background: var(--elev);
+      }
+      .foot { font-size: 0.75rem; color: var(--subtle); margin: 0; }
+      a { color: var(--teal); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="stage">
+        <video id="video" playsinline muted autoplay></video>
+        <button type="button" class="perm" id="perm">
+          <span class="cta" id="cta">Allow front camera</span>
+          <span class="hint-on-dark" id="permHint">Tap anywhere to request the selfie camera.</span>
+        </button>
+        <div class="badge" id="badge">–</div>
+        <div class="chip" id="chip"></div>
+      </section>
+      <section class="side">
+        <header>
+          <div class="dot" id="dot">–</div>
+          <div>
+            <h1 id="title">Allow the front camera</h1>
+            <p class="sub" id="hint">Permission is required to use the selfie camera.</p>
+          </div>
+        </header>
+        <div class="log" id="log">
+          <p class="empty">
+            Hold 1 or 2 fingers in the selfie camera. Zero or three-plus are ignored.
+            While a check is pending, extra crops send only if local confidence rises.
+          </p>
+        </div>
+        <label>
+          Optional xAI API key (Grok double-check, this tab only)
+          <input id="key" type="password" autocomplete="off" placeholder="xai-… leave blank for local only" />
+        </label>
+        <p class="foot">
+          Static GitHub Pages demo.
+          Source: <a href="https://github.com/rayony/counting-fingers">rayony/counting-fingers</a>
+        </p>
+      </section>
+    </main>
+    <script type="module">
+      import {
+        FilesetResolver,
+        HandLandmarker,
+      } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/+esm";
+
+      const TIP = { thumb: 4, index: 8, middle: 12, ring: 16, pinky: 20 };
+      const PIP = { thumb: 3, index: 6, middle: 10, ring: 14, pinky: 18 };
+      const MCP = { thumb: 2, index: 5, middle: 9, ring: 13, pinky: 17 };
+      const STABLE = 6;
+      const FREEZE_MS = 10_000;
+      const MAX_SHOTS = 3;
+      const BOOST = 8;
+      const SHOT_GAP = 450;
+      const FAST = 55;
+      const SLOW = 220;
+
+      const video = document.getElementById("video");
+      const perm = document.getElementById("perm");
+      const cta = document.getElementById("cta");
+      const permHint = document.getElementById("permHint");
+      const badgeEl = document.getElementById("badge");
+      const chip = document.getElementById("chip");
+      const dot = document.getElementById("dot");
+      const title = document.getElementById("title");
+      const hint = document.getElementById("hint");
+      const logEl = document.getElementById("log");
+      const keyInput = document.getElementById("key");
+
+      const keyStore = "finger-confirm-xai-key";
+      keyInput.value = sessionStorage.getItem(keyStore) || "";
+      keyInput.addEventListener("change", () => {
+        const v = keyInput.value.trim();
+        if (v) sessionStorage.setItem(keyStore, v);
+        else sessionStorage.removeItem(keyStore);
+      });
+
+      function dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      function clamp(n, lo, hi) {
+        return Math.min(hi, Math.max(lo, n));
+      }
+      function extended(lm, tip, pip, mcp, lenient) {
+        const wrist = lm[0], t = lm[tip], p = lm[pip], m = lm[mcp];
+        if (!wrist || !t || !p || !m) return false;
+        const tipW = dist(t, wrist), pipW = dist(p, wrist), mcpW = dist(m, wrist);
+        return tipW > pipW * (lenient ? 1.02 : 1.08) && tipW > mcpW * (lenient ? 1.08 : 1.18);
+      }
+      function strength(lm, tip, mcp) {
+        const wrist = lm[0], t = lm[tip], m = lm[mcp];
+        if (!wrist || !t || !m) return 0;
+        return clamp((dist(t, wrist) / Math.max(dist(m, wrist), 1e-6) - 1) / 0.65, 0, 1);
+      }
+      function countRaised(lm) {
+        const strict = {
+          thumb: extended(lm, TIP.thumb, PIP.thumb, MCP.thumb, false),
+          index: extended(lm, TIP.index, PIP.index, MCP.index, false),
+          middle: extended(lm, TIP.middle, PIP.middle, MCP.middle, false),
+          ring: extended(lm, TIP.ring, PIP.ring, MCP.ring, false),
+          pinky: extended(lm, TIP.pinky, PIP.pinky, MCP.pinky, false),
+        };
+        let n = Object.values(strict).reduce((a, b) => a + Number(b), 0);
+        if (n === 0) {
+          n = ["thumb", "index", "middle", "ring", "pinky"].reduce(
+            (a, k) => a + Number(extended(lm, TIP[k], PIP[k], MCP[k], true)),
+            0,
+          );
+        }
+        if (n === 3 && strict.index && strict.middle && !strict.thumb) n = 2;
+        return n;
+      }
+      function poseConf(lm, count) {
+        const thumb = strength(lm, TIP.thumb, MCP.thumb);
+        const index = strength(lm, TIP.index, MCP.index);
+        const middle = strength(lm, TIP.middle, MCP.middle);
+        const ring = strength(lm, TIP.ring, MCP.ring);
+        const pinky = strength(lm, TIP.pinky, MCP.pinky);
+        const target = count === 1 ? index : (index + middle) / 2;
+        const extra = count === 1 ? (middle + ring + pinky + thumb) / 4 : (ring + pinky + thumb) / 3;
+        const clarity = target * (1 - extra * 0.75);
+        const span = dist(lm[0], lm[MCP.middle] || lm[0]);
+        const size = clamp((span - 0.08) / 0.22, 0, 1);
+        return Math.round(clamp(clarity * 78 + size * 22, 1, 99));
+      }
+      function qualify(n) {
+        return n === 1 || n === 2 ? n : null;
+      }
+      function clock() {
+        return new Date().toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+      function word(n) {
+        return n === 1 ? "One" : n === 2 ? "Two" : String(n);
+      }
+
+      const lines = [];
+      function pushLog(text, tone) {
+        lines.push({ time: clock(), text, tone });
+        if (lines.length > 40) lines.shift();
+        logEl.innerHTML = `<ol>${lines
+          .map(
+            (l) =>
+              `<li><time>${l.time}</time><span class="t-${l.tone}">${l.text}</span></li>`,
+          )
+          .join("")}</ol>`;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      function cropJpeg(landmarks) {
+        const vw = video.videoWidth, vh = video.videoHeight;
+        if (!vw || !vh) return "";
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        for (const p of landmarks) {
+          minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+        }
+        const pad = 0.2;
+        minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+        maxX = Math.min(1, maxX + pad); maxY = Math.min(1, maxY + pad);
+        const sx = minX * vw, sy = minY * vh;
+        const sw = Math.max(32, (maxX - minX) * vw);
+        const sh = Math.max(32, (maxY - minY) * vh);
+        const scale = Math.min(1, 480 / Math.max(sw, sh));
+        const c = document.createElement("canvas");
+        c.width = Math.max(64, Math.round(sw * scale));
+        c.height = Math.max(64, Math.round(sh * scale));
+        const ctx = c.getContext("2d");
+        if (!ctx) return "";
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, c.width, c.height);
+        return c.toDataURL("image/jpeg", 0.62);
+      }
+
+      let landmarker = null;
+      let lastTs = 0;
+      let freezeUntil = 0;
+      let waitDrop = false;
+      let qualifyNow = null;
+      let confirmed = null;
+      let localConf = 0;
+      let verifying = false;
+      const ep = { shots: 0, pending: 0, lastConf: 0, lastSendAt: 0, count: null };
+      const stable = { count: null, frames: 0 };
+
+      function setBadge(n) {
+        const v = n ?? "–";
+        badgeEl.textContent = v;
+        dot.textContent = v;
+        badgeEl.classList.toggle("show", Boolean(n));
+      }
+
+      function paint() {
+        const frozen = Date.now() < freezeUntil;
+        const left = Math.max(0, Math.ceil((freezeUntil - Date.now()) / 1000));
+        const n = frozen ? (confirmed ?? qualifyNow) : qualifyNow;
+        setBadge(n);
+        if (frozen) {
+          title.textContent = confirmed === 2 || n === 2 ? "TWO fingers detected" : "ONE finger detected";
+          hint.textContent = `Detected in last 10s (${left}s left)`;
+          chip.textContent = `Detected in last 10s · ${left}s freeze`;
+          chip.classList.add("show");
+        } else if (verifying) {
+          title.textContent = qualifyNow === 2 ? "TWO fingers suspected" : "ONE finger suspected";
+          hint.textContent = `Waiting for check · local ${localConf}%`;
+          chip.textContent = `Double-checking · local ${localConf}%`;
+          chip.classList.add("show");
+        } else {
+          chip.classList.remove("show");
+          if (qualifyNow === 1) title.textContent = "ONE finger suspected";
+          else if (qualifyNow === 2) title.textContent = "TWO fingers suspected";
+          else title.textContent = "Hold 1 or 2 fingers";
+          hint.textContent = "Hold up exactly one or two fingers.";
+        }
+      }
+
+      async function grokVerify(jpeg, localCount) {
+        const key = keyInput.value.trim();
+        if (!key) {
+          return { ok: true, fingersUp: localCount, confidence: localConf, ms: 0, localOnly: true };
+        }
+        const prompt = `You are verifying a phone selfie crop of one hand. A local detector guessed ${localCount} raised finger(s). Count how many fingers are clearly extended. Return ONLY JSON: {"fingers_up":0-5,"confidence":0-100,"reason":"max 8 words"}`;
+        const started = Date.now();
+        const res = await fetch("https://api.x.ai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+          body: JSON.stringify({
+            model: "grok-4.5",
+            store: false,
+            temperature: 0,
+            max_tokens: 120,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: jpeg, detail: "low" } },
+                { type: "text", text: prompt },
+              ],
+            }],
+          }),
+        });
+        if (!res.ok) return { ok: false, error: `xAI API error ${res.status}` };
+        const body = await res.json();
+        const raw = body.choices?.[0]?.message?.content ?? "";
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) return { ok: false, error: "Could not read Grok's count" };
+        const parsed = JSON.parse(match[0]);
+        return {
+          ok: true,
+          fingersUp: Math.max(0, Math.min(5, Math.round(parsed.fingers_up))),
+          confidence: Math.max(0, Math.min(100, Math.round(Number(parsed.confidence ?? 70)))),
+          ms: Date.now() - started,
+        };
+      }
+
+      async function sendVerify(count, jpeg, confidence, shot) {
+        if (Date.now() < freezeUntil) return;
+        ep.pending += 1;
+        ep.shots = shot;
+        ep.lastConf = confidence;
+        ep.lastSendAt = Date.now();
+        ep.count = count;
+        verifying = true;
+        paint();
+        pushLog(
+          shot === 1
+            ? `Sending photo for double confirm… (local ${confidence}%)`
+            : `Sending photo #${shot} — local confidence rose to ${confidence}%`,
+          "pending",
+        );
+        try {
+          const result = await grokVerify(jpeg, count);
+          if (!result.ok) {
+            pushLog(result.error, "false");
+            return;
+          }
+          const confirmedOneOrTwo = result.fingersUp === 1 || result.fingersUp === 2;
+          if (result.localOnly) {
+            const label = `${word(result.fingersUp)} finger${result.fingersUp === 1 ? "" : "s"} detected locally (${result.confidence}%) — no API key, skipped Grok`;
+            pushLog(label, confirmedOneOrTwo ? "confirm" : "false");
+          } else {
+            const secs = Math.max(1, Math.round(result.ms / 1000));
+            pushLog(
+              `${word(result.fingersUp)} finger${result.fingersUp === 1 ? "" : "s"} detected (${result.confidence}% confidence), processing time ${secs}s`,
+              confirmedOneOrTwo ? "confirm" : "false",
+            );
+          }
+          if (confirmedOneOrTwo) {
+            confirmed = result.fingersUp;
+            freezeUntil = Date.now() + FREEZE_MS;
+            waitDrop = true;
+          }
+        } catch (err) {
+          pushLog(err instanceof Error ? err.message : "Double-check failed", "false");
+        } finally {
+          ep.pending = Math.max(0, ep.pending - 1);
+          if (ep.pending === 0) {
+            verifying = false;
+            waitDrop = true;
+          }
+          paint();
+        }
+      }
+
+      function loop() {
+        if (!landmarker || video.readyState < 2) {
+          requestAnimationFrame(loop);
+          return;
+        }
+        const now = performance.now();
+        const pending = ep.pending > 0;
+        if (now - lastTs < (pending ? SLOW : FAST)) {
+          requestAnimationFrame(loop);
+          return;
+        }
+        lastTs = now;
+        paint();
+        if (Date.now() < freezeUntil) {
+          requestAnimationFrame(loop);
+          return;
+        }
+        const res = landmarker.detectForVideo(video, now);
+        const lm = res.landmarks?.[0];
+        if (!lm) {
+          qualifyNow = null;
+          localConf = 0;
+          stable.count = null;
+          stable.frames = 0;
+          if (ep.pending === 0) {
+            waitDrop = false;
+            ep.shots = 0;
+            ep.count = null;
+            ep.lastConf = 0;
+          }
+          requestAnimationFrame(loop);
+          return;
+        }
+        const n = countRaised(lm);
+        const q = qualify(n);
+        qualifyNow = q;
+        localConf = q ? poseConf(lm, q) : 0;
+        if (!q) {
+          stable.count = null;
+          stable.frames = 0;
+          if (ep.pending === 0) {
+            waitDrop = false;
+            ep.shots = 0;
+            ep.count = null;
+          }
+        } else if (waitDrop && ep.pending === 0) {
+          stable.count = null;
+          stable.frames = 0;
+        } else if (ep.shots === 0) {
+          if (stable.count === q) stable.frames += 1;
+          else { stable.count = q; stable.frames = 1; }
+          if (stable.frames >= STABLE) {
+            const jpeg = cropJpeg(lm);
+            if (jpeg) void sendVerify(q, jpeg, localConf, 1);
+          }
+        } else if (pending && ep.shots < MAX_SHOTS && q === ep.count) {
+          if (localConf >= ep.lastConf + BOOST && Date.now() - ep.lastSendAt >= SHOT_GAP) {
+            const jpeg = cropJpeg(lm);
+            if (jpeg) void sendVerify(q, jpeg, localConf, ep.shots + 1);
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+
+      perm.addEventListener("click", async () => {
+        cta.textContent = "Waiting for permission";
+        permHint.textContent = "";
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: { facingMode: { ideal: "user" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          });
+          video.srcObject = stream;
+          video.setAttribute("playsinline", "true");
+          await video.play();
+          perm.hidden = true;
+          title.textContent = "Loading on-device hand model…";
+          hint.textContent = "MediaPipe Hand Landmarker from CDN.";
+          const fileset = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm",
+          );
+          try {
+            landmarker = await HandLandmarker.createFromOptions(fileset, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+                delegate: "GPU",
+              },
+              runningMode: "VIDEO",
+              numHands: 1,
+              minHandDetectionConfidence: 0.35,
+              minHandPresenceConfidence: 0.35,
+              minTrackingConfidence: 0.35,
+            });
+          } catch {
+            landmarker = await HandLandmarker.createFromOptions(fileset, {
+              baseOptions: {
+                modelAssetPath:
+                  "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+                delegate: "CPU",
+              },
+              runningMode: "VIDEO",
+              numHands: 1,
+            });
+          }
+          title.textContent = "Hold 1 or 2 fingers";
+          hint.textContent = "On-device model is live.";
+          requestAnimationFrame(loop);
+        } catch {
+          cta.textContent = "Camera blocked — try again";
+          permHint.textContent = "Allow the front camera in the browser prompt, then tap again.";
+        }
+      });
+    </script>
+  </body>
+</html>

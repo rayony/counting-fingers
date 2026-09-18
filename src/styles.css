@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f6f3ee;
+  --color-bg-elevated: #fffdf9;
+  --color-fg: #161616;
+  --color-muted: #5c5a56;
+  --color-subtle: #8a8680;
+  --color-border: #e4dfd6;
+  --color-teal: #1a5f73;
+  --color-teal-deep: #13485a;
+  --color-warm: #e07020;
+  --color-warm-fg: #ffffff;
+  --color-log-confirm: #c4312b;
+  --color-log-false: #c39200;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --shadow-panel: 0 0 0 1px rgba(22, 22, 22, 0.06), 0 10px 28px -18px rgba(22, 22, 22, 0.28);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
