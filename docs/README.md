@@ -20,6 +20,6 @@ and set **Source** to **GitHub Actions**. Re-run the workflow (Actions → GitHu
 
 Browsers only allow `getUserMedia` on **HTTPS** (or localhost). GitHub Pages is HTTPS, so a phone can grant the selfie camera.
 
-## Grok on Pages
+## No API keys on Pages
 
-Paste an xAI API key in the optional field if you want the same double-check as the full app. The key stays in this tab (`sessionStorage`). Leave it blank to use **local detection only**.
+This demo does **not** call xAI and has **no key input**. Detection stays in the browser. Use `npm run dev` with `.env` (`XAI_API_KEY=`) for Grok double-check.

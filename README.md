@@ -26,7 +26,7 @@ While Grok is still answering, local sampling **slows** (does not stop). A 2nd o
 | Front camera + local 1/2 count | Yes | Yes |
 | Extra shots on rising confidence | Yes | Yes |
 | 10s freeze after confirm | After local confirm, or Grok if you paste a key | After Grok confirms |
-| Grok double-check | Optional — paste your own xAI key in the page (stays in this browser tab) | Server-side `XAI_API_KEY` |
+| Grok double-check | No (static host, no keys in the browser) | Server-side `XAI_API_KEY` |
 
 GitHub Pages is static HTTPS, so there is no server to hide an API key. The Pages demo never uploads photos to GitHub.
 
@@ -47,9 +47,9 @@ Then open the printed local URL on your phone (same Wi-Fi) or in a desktop brows
 
 ## Privacy
 
-- Video never leaves the device except a **JPEG crop of the hand** when 1 or 2 fingers are stable.
-- Server verify uses `store: false`.
-- Do not commit `.env`. The Pages demo keeps a pasted key in `sessionStorage` only.
+- Video never leaves the device except a **JPEG crop of the hand** when 1 or 2 fingers are stable, and only in the full app.
+- Server verify uses `store: false` and `process.env.XAI_API_KEY` (never `VITE_`, never in client JS).
+- `.env` is gitignored. GitHub Pages has **no key field** and does not call xAI.
 
 ## Stack
 

@@ -206,15 +206,11 @@
         <div class="log" id="log">
           <p class="empty">
             Hold 1 or 2 fingers in the selfie camera. Zero or three-plus are ignored.
-            While a check is pending, extra crops send only if local confidence rises.
+            This Pages demo stays on-device — Grok double-check runs only in the full app with a server-side key.
           </p>
         </div>
-        <label>
-          Optional xAI API key (Grok double-check, this tab only)
-          <input id="key" type="password" autocomplete="off" placeholder="xai-… leave blank for local only" />
-        </label>
         <p class="foot">
-          Static GitHub Pages demo.
+          Static GitHub Pages demo (local detection only).
           Source: <a href="https://github.com/rayony/counting-fingers">rayony/counting-fingers</a>
         </p>
       </section>
@@ -246,15 +242,6 @@
       const title = document.getElementById("title");
       const hint = document.getElementById("hint");
       const logEl = document.getElementById("log");
-      const keyInput = document.getElementById("key");
-
-      const keyStore = "finger-confirm-xai-key";
-      keyInput.value = sessionStorage.getItem(keyStore) || "";
-      keyInput.addEventListener("change", () => {
-        const v = keyInput.value.trim();
-        if (v) sessionStorage.setItem(keyStore, v);
-        else sessionStorage.removeItem(keyStore);
-      });
 
       function dist(a, b) {
         return Math.hypot(a.x - b.x, a.y - b.y);
@@ -394,41 +381,8 @@
       }
 
       async function grokVerify(jpeg, localCount) {
-        const key = keyInput.value.trim();
-        if (!key) {
-          return { ok: true, fingersUp: localCount, confidence: localConf, ms: 0, localOnly: true };
-        }
-        const prompt = `You are verifying a phone selfie crop of one hand. A local detector guessed ${localCount} raised finger(s). Count how many fingers are clearly extended. Return ONLY JSON: {"fingers_up":0-5,"confidence":0-100,"reason":"max 8 words"}`;
-        const started = Date.now();
-        const res = await fetch("https://api.x.ai/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-          body: JSON.stringify({
-            model: "grok-4.5",
-            store: false,
-            temperature: 0,
-            max_tokens: 120,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "image_url", image_url: { url: jpeg, detail: "low" } },
-                { type: "text", text: prompt },
-              ],
-            }],
-          }),
-        });
-        if (!res.ok) return { ok: false, error: `xAI API error ${res.status}` };
-        const body = await res.json();
-        const raw = body.choices?.[0]?.message?.content ?? "";
-        const match = raw.match(/\{[\s\S]*\}/);
-        if (!match) return { ok: false, error: "Could not read Grok's count" };
-        const parsed = JSON.parse(match[0]);
-        return {
-          ok: true,
-          fingersUp: Math.max(0, Math.min(5, Math.round(parsed.fingers_up))),
-          confidence: Math.max(0, Math.min(100, Math.round(Number(parsed.confidence ?? 70)))),
-          ms: Date.now() - started,
-        };
+        // Pages is static: never send photos or keys off-device here.
+        return { ok: true, fingersUp: localCount, confidence: localConf, ms: 0, localOnly: true };
       }
 
       async function sendVerify(count, jpeg, confidence, shot) {
